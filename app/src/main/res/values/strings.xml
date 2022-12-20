@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SignatureFix</string>
+    <string name="description">修复mt2去签名校验在安卓13的崩溃</string>
+</resources>
