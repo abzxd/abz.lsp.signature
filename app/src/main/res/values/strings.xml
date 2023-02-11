@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">SignatureFix</string>
-    <string name="description">修复mt2去签名校验在安卓13的崩溃</string>
+    <string name="app_name">SFX</string>
+    <string name="description">修复去签名校验在安卓13的闪退</string>
 </resources>

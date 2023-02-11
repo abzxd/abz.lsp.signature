@@ -14,44 +14,25 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class XposedInit implements IXposedHookLoadPackage {
-    public static final String TAG = "SignatureFix: ";
+    private static String appPkgName;
+    private static Object base;
+    private static byte[][] sign;
 
-    private String appPkgName;
-    private Object base;
-    private byte[][] sign;
-
-    public static final String className = "bin.mt.apksignaturekillerplus.HookApplication";
-
+    private static boolean state = true;
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam loadPackageParam) {
-        if (loadPackageParam.isFirstApplication) {
-            log("* package: " + loadPackageParam.packageName);
-            log("* application: " + loadPackageParam.appInfo.packageName);
+        String className = loadPackageParam.appInfo.className;
+        if (state) {
             try {
                 Class<?> clazz = loadPackageParam.classLoader.loadClass(className);
-                log("* loading class: " + className);
-                log("\t\thook field init..");
                 XposedBridge.hookAllMethods(clazz, "hook", new OnHookListener());
-                log("\t\treplace invoke..");
                 XposedBridge.hookAllMethods(clazz, "invoke", new OnInvokeListener());
-                log("\t\tsucceed!");
-            } catch (ClassNotFoundException e) {
-                log("? class not found: " + className);
-            }
-            log("* finish");
+                XposedBridge.log("* done!"); state = false;
+            } catch (ClassNotFoundException ignored) {}
         }
     }
 
-    public void log(String msg) {
-        XposedBridge.log(TAG + msg);
-    }
-
-    /* log
-     public void log(String format, Object ... args) {
-         log(String.format(Locale.getDefault(), format, args));
-     } */
-
-    class OnHookListener extends XC_MethodHook {
+    private static final class OnHookListener extends XC_MethodHook {
         @Override
         protected void afterHookedMethod(MethodHookParam param) throws Throwable {
             super.afterHookedMethod(param);
@@ -65,8 +46,8 @@ public class XposedInit implements IXposedHookLoadPackage {
         }
     }
 
-    Signature[] signatures;
-    public void replaceSignature(PackageInfo packageInfo) {
+    private static Signature[] signatures;
+    private static void replaceSignature(PackageInfo packageInfo) {
         if (signatures == null) {
             signatures = new Signature[sign.length];
             for (int i = 0; i < signatures.length; i++) signatures[i] = new Signature(sign[i]);
@@ -74,7 +55,7 @@ public class XposedInit implements IXposedHookLoadPackage {
         packageInfo.signatures = signatures;
     }
 
-    class PackageInfoHook extends XC_MethodHook {
+    private static final class PackageInfoHook extends XC_MethodHook {
         @Override
         protected void afterHookedMethod(XC_MethodHook.MethodHookParam param) throws Throwable {
             if (appPkgName.equals(param.args[0])) replaceSignature((PackageInfo) param.getResult());
@@ -82,10 +63,9 @@ public class XposedInit implements IXposedHookLoadPackage {
         }
     }
 
-    class OnInvokeListener extends XC_MethodReplacement {
+    private static final class OnInvokeListener extends XC_MethodReplacement {
         @Override
         protected Object replaceHookedMethod(MethodHookParam methodHookParam) throws Throwable {
-//            Object obj = methodHookParam.args[0];
             Method method = (Method) methodHookParam.args[1];
             Object[] objArr = (Object[]) methodHookParam.args[2];
             return method.invoke(base, objArr);

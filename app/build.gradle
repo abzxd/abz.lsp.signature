@@ -10,8 +10,8 @@ android {
         applicationId "abz.lsp.signature"
         minSdk 26
         targetSdk 33
-        versionCode 1
-        versionName "final"
+        versionCode 2
+        versionName "external"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
